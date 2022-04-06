@@ -1,8 +1,8 @@
 ﻿using MassTransit;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using Shared.Constants;
-using Shared.Event;
+using Shared.Orchestiration.Event;
+using Shared.Orchestiration.Events;
 using StockApi.Models;
 using System.Collections.Generic;
 using System.Linq;
@@ -43,26 +43,20 @@ namespace StockApi.Consumers
                     }
                     await _appDbContext.SaveChangesAsync();
                 }
-                _logger.LogInformation($"Sotock Reserved Successfully for BuyerId : {context.Message.BuyerId}");
 
-                var sendEndpoint = await _sendEnpointProvider.GetSendEndpoint(new System.Uri($"queue:{RabbitMqSettings.StockReservedEventQueueName}"));
 
-                var stockReservedEvent = new StockReservedEvent
+                var stockReservedEvent = new StockReservedEvent(context.Message.CorrelationId)
                 {
-                    Payment = context.Message.Payment,
-                    BuyerId = context.Message.BuyerId,
-                    OrderId = context.Message.OrderId,
                     OrderItems = context.Message.OrderItems
                 };
 
-                await sendEndpoint.Send(stockReservedEvent);
+                await _publishEndpoint.Publish(stockReservedEvent);
             }
             else
             {
-                await _publishEndpoint.Publish(new StockNotReservedEvent
+                await _publishEndpoint.Publish(new StockNotReservedEvent(context.Message.CorrelationId)
                 {
-                    OrderId = context.Message.OrderId,
-                    FailMessage = "Stock Not Reserved Successfully"
+                    Reason = "Stock Not Reserved Successfully"
                 });
             }
         }

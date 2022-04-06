@@ -1,13 +1,12 @@
 ﻿using Shared.EventMessages;
 using System.Collections.Generic;
 
-namespace Shared.Event
+namespace Shared.Orchestiration.Interfaces
 {
-    public class StockReservedEvent
+    public interface IPaymentFailedRequestEvent
     {
         public int OrderId { get; set; }
-        public string BuyerId { get; set; }
-        public PaymentMessage Payment { get; set; }
         public List<OrderItemMessage> OrderItems { get; set; }
+        public string Reason { get; set; }
     }
 }

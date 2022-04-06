@@ -24,13 +24,13 @@ namespace Payment.Api
         {
             services.AddMassTransit(x =>
             {
-                x.AddConsumer<StockReservedEventConsumer>();
+                x.AddConsumer<StockReservedRequestPaymentConsumer>();
                 x.UsingRabbitMq((context, cfg) =>
                 {
                     cfg.Host(Configuration.GetConnectionString("RabbitMQ"));
-                    cfg.ReceiveEndpoint(RabbitMqSettings.StockReservedEventQueueName, e =>
+                    cfg.ReceiveEndpoint(RabbitMqSettings.PaymentStockReservedRequestQueueName, e =>
                     {
-                        e.ConfigureConsumer<StockReservedEventConsumer>(context);
+                        e.ConfigureConsumer<StockReservedRequestPaymentConsumer>(context);
                     });
                 });
             });

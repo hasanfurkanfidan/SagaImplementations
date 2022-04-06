@@ -28,18 +28,19 @@ namespace StockApi
             {
                 x.AddConsumer<OrderCreatedEventConsumer>();
                 x.AddConsumer<PaymentFailedEventConsumer>();
+
                 x.UsingRabbitMq((context, cfg) =>
                 {
-                    cfg.Host(Configuration.GetConnectionString("RabbitMQ"));
                     cfg.ReceiveEndpoint(RabbitMqSettings.StockOrderCreatedEventQueueName, e =>
                     {
                         e.ConfigureConsumer<OrderCreatedEventConsumer>(context);
                     });
-
                     cfg.ReceiveEndpoint(RabbitMqSettings.StockPaymentFailedEventQueueName, e =>
                     {
                         e.ConfigureConsumer<PaymentFailedEventConsumer>(context);
                     });
+                    cfg.Host(Configuration.GetConnectionString("RabbitMQ"));
+
                 });
             });
 

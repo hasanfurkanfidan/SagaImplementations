@@ -2,7 +2,9 @@
 using Microsoft.AspNetCore.Mvc;
 using Order.Api.Dtos;
 using Order.Api.Models;
-using Shared.Event;
+using Shared.Constants;
+using Shared.Orchestiration.Events;
+using Shared.Orchestiration.Interfaces;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -13,11 +15,11 @@ namespace Order.Api.Controllers
     public class OrdersController : ControllerBase
     {
         private readonly AppDbContext _appDbContext;
-        private readonly IPublishEndpoint _publishEndpoint;
-        public OrdersController(AppDbContext appDbContext, IPublishEndpoint publishEndpoint)
+        private readonly ISendEndpointProvider _sendEndpointProvider;
+        public OrdersController(AppDbContext appDbContext, ISendEndpointProvider sendEndpointProvider)
         {
             _appDbContext = appDbContext;
-            _publishEndpoint = publishEndpoint;
+            _sendEndpointProvider = sendEndpointProvider;
         }
 
         [HttpPost]
@@ -46,7 +48,7 @@ namespace Order.Api.Controllers
             });
             await _appDbContext.AddAsync(newOrder);
             await _appDbContext.SaveChangesAsync();
-            var orderCreatedEvent = new OrderCreatedEvent
+            var orderCreatedRequestEvent = new OrderCreatedRequestEvent
             {
                 BuyerId = orderCreateDto.BuyerId,
                 OrderId = newOrder.Id,
@@ -61,14 +63,16 @@ namespace Order.Api.Controllers
 
             orderCreateDto.OrderItems.ForEach(orderCreateDto =>
             {
-                orderCreatedEvent.OrderItems.Add(new Shared.EventMessages.OrderItemMessage
+                orderCreatedRequestEvent.OrderItems.Add(new Shared.EventMessages.OrderItemMessage
                 {
                     Count = orderCreateDto.Count,
                     ProductId = orderCreateDto.ProductId
                 });
             });
 
-            await _publishEndpoint.Publish(orderCreatedEvent);
+            //await _publishEndpoint.Publish(orderCreatedEvent); (Caraographyden kalma)
+            var endpoint = await _sendEndpointProvider.GetSendEndpoint(new System.Uri($"queue:{RabbitMqSettings.OrderSaga}"));
+            await endpoint.Send<IOrderCreatedRequestEvent>(orderCreatedRequestEvent); // Send çünkü Sadece State Machine dinliyor!
             //Publish => Subscribe olan kuyruk yoksa boşa gider
             //Send => Direk Olarak Kuyruğa gider
             return Ok();

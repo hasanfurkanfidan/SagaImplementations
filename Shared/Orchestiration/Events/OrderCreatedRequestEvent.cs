@@ -1,9 +1,10 @@
 ﻿using Shared.EventMessages;
+using Shared.Orchestiration.Interfaces;
 using System.Collections.Generic;
 
-namespace Shared.Event
+namespace Shared.Orchestiration.Events
 {
-    public class OrderCreatedEvent
+    public class OrderCreatedRequestEvent : IOrderCreatedRequestEvent
     {
         public int OrderId { get; set; }
         public string BuyerId { get; set; }

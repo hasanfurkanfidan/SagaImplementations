@@ -26,27 +26,27 @@ namespace Order.Api
         {
             services.AddMassTransit(x =>
             {
-                x.AddConsumer<PaymentCompletedEventConsumer>();
-                x.AddConsumer<PaymentFailedEventConsumer>();
-                x.AddConsumer<StockNotReservedEventConsumer>();
+                x.AddConsumer<OrderRequestCompletedEventConsumer>();
+                x.AddConsumer<OrderStockNotReservedEventConsumer>();
+                x.AddConsumer<PaymentFailedRequestEventConsumer>();
                 x.UsingRabbitMq((context, cfg) =>
                 {
-                    cfg.ReceiveEndpoint(RabbitMqSettings.OrderPaymentCompletedEventQueueName, e =>
-                    {
-                        e.ConfigureConsumer<PaymentCompletedEventConsumer>(context);
-                    });
-
-                    cfg.ReceiveEndpoint(RabbitMqSettings.OrderPaymentFailedEventQueueName, e =>
-                    {
-                        e.ConfigureConsumer<PaymentFailedEventConsumer>(context);
-                    });
-
-                    cfg.ReceiveEndpoint(RabbitMqSettings.OrderStockNotReservedEventQueueName, e =>
-                    {
-                        e.ConfigureConsumer<StockNotReservedEventConsumer>(context);
-                    });
-
                     cfg.Host(Configuration.GetConnectionString("RabbitMQ"));
+
+                    cfg.ReceiveEndpoint(RabbitMqSettings.OrderRequestCompletedEventtQueueName, x =>
+                    {
+                        x.ConfigureConsumer<OrderRequestCompletedEventConsumer>(context);
+                    });
+
+                    cfg.ReceiveEndpoint(RabbitMqSettings.OrderStockNotReservedRequestQueueName, x =>
+                    {
+                        x.ConfigureConsumer<OrderStockNotReservedEventConsumer>(context);
+                    });
+
+                    cfg.ReceiveEndpoint(RabbitMqSettings.OrderPaymentFailedRequestQueue, x =>
+                    {
+                        x.ConfigureConsumer<PaymentFailedRequestEventConsumer>(context);
+                    });
                 });
             });
 

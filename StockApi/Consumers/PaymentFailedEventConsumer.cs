@@ -1,24 +1,28 @@
 ﻿using MassTransit;
-using Shared.Event;
+using Microsoft.EntityFrameworkCore;
+using Shared.Orchestiration.Interfaces;
 using StockApi.Models;
-using System.Linq;
 using System.Threading.Tasks;
 
 namespace StockApi.Consumers
 {
-    public class PaymentFailedEventConsumer : IConsumer<PaymentFailedEvent>
+    public class PaymentFailedEventConsumer : IConsumer<IPaymentFailedRequestEvent>
     {
         private readonly AppDbContext _appDbContext;
         public PaymentFailedEventConsumer(AppDbContext appDbContext)
         {
             _appDbContext = appDbContext;
         }
-        public async Task Consume(ConsumeContext<PaymentFailedEvent> context)
+        public async Task Consume(ConsumeContext<IPaymentFailedRequestEvent> context)
         {
-            foreach (var item in context.Message.OrderItemMessages)
+            var message = context.Message;
+            foreach (var orderItem in message.OrderItems)
             {
-                var stock = _appDbContext.Stocks.Where(p => p.ProductId == item.ProductId).FirstOrDefault();
-                stock.Count += item.Count;
+                var stock = await _appDbContext.Stocks.SingleOrDefaultAsync(p => p.ProductId == orderItem.ProductId);
+                if (stock != null)
+                {
+                    stock.Count += orderItem.Count;
+                }
             }
             await _appDbContext.SaveChangesAsync();
         }
